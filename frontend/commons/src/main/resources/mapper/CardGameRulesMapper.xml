@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.itheima.prize.commons.db.mapper.CardGameRulesMapper">
+
+    <resultMap id="BaseResultMap" type="com.itheima.prize.commons.db.entity.CardGameRules">
+            <id property="id" column="id" jdbcType="INTEGER"/>
+            <result property="gameid" column="gameid" jdbcType="INTEGER"/>
+            <result property="userlevel" column="userlevel" jdbcType="SMALLINT"/>
+            <result property="enterTimes" column="enter_times" jdbcType="SMALLINT"/>
+            <result property="goalTimes" column="goal_times" jdbcType="SMALLINT"/>
+            <result property="randomRate" column="random_rate" jdbcType="TINYINT"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,gameid,userlevel,
+        enter_times,goal_times,random_rate
+    </sql>
+</mapper>

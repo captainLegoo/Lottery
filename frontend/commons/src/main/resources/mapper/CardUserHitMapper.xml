@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.itheima.prize.commons.db.mapper.CardUserHitMapper">
+
+    <resultMap id="BaseResultMap" type="com.itheima.prize.commons.db.entity.CardUserHit">
+            <id property="id" column="id" jdbcType="INTEGER"/>
+            <result property="gameid" column="gameid" jdbcType="INTEGER"/>
+            <result property="userid" column="userid" jdbcType="INTEGER"/>
+            <result property="productid" column="productid" jdbcType="INTEGER"/>
+            <result property="hittime" column="hittime" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,gameid,userid,
+        productid,hittime
+    </sql>
+</mapper>

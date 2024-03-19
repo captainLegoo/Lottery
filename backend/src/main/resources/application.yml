@@ -19,8 +19,8 @@ ruoyi:
 #例如：http://192.168.64.100:9005/prize/1701754725603.jpeg
 #所以要保障其可访问性，尤其是docker部署的时候，应该是宿主机暴露的端口！
 minio:
-  url: http://192.168.200.132:9005
-  host: 192.168.200.132
+  url: http://192.168.64.100:9005
+  host: 192.168.64.100
   port: 9005
   bucket: prize
   username: minioadmin

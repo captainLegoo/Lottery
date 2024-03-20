@@ -28,8 +28,6 @@ public class LoginController {
     @Autowired
     private RedisUtil redisUtil;
 
-    private final AtomicInteger loginErrorCount = new AtomicInteger(5);
-
     @PostMapping("/login")
     @ApiOperation(value = "登录")
     @ApiImplicitParams({
@@ -38,7 +36,7 @@ public class LoginController {
     })
     public ApiResult login(HttpServletRequest request, @RequestParam String account, @RequestParam String password) {
         // 检查用户是否已经达到登录尝试上限
-        boolean isExistAccountInRedis = redisUtil.hasKey(RedisKeys.USERLOGINTIMES + account);
+        boolean isExistAccountInRedis = redisUtil.hasKey(account);
         if (isExistAccountInRedis) {
             return new ApiResult(0, "密码错误5次，请5分钟后再登录", null);
         }
@@ -61,16 +59,18 @@ public class LoginController {
                 // 将用户信息存储在会话中
                 request.getSession().setAttribute("user", cardUser);
                 // 重置登录次数
-                loginErrorCount.set(5);
+                redisUtil.set(RedisKeys.USERLOGINTIMES + account, 0);
                 // 返回成功登录用户信息
                 return new ApiResult(1, "登录成功", cardUser);
             } else {
                 // 密码错误
-                if (loginErrorCount.decrementAndGet() <= 0) {
+                redisUtil.incr(RedisKeys.USERLOGINTIMES + account, 1);
+                int loginErrorCount = (int) redisUtil.get(RedisKeys.USERLOGINTIMES + account);
+                if (loginErrorCount >= 5) {
                     // 超过五次，在redis中设置该用户禁止登录五分钟
-                    redisUtil.set(RedisKeys.USERLOGINTIMES + account, "", 5 * 60);
+                    redisUtil.set(account, "", 5 * 60);
                     // 重置登录次数
-                    loginErrorCount.set(5);
+                    redisUtil.set(RedisKeys.USERLOGINTIMES + account, 0);
                     return new ApiResult(0, "密码错误5次，请5分钟后再登录", null);
                 }
             }

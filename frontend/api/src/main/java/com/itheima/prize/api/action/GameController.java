@@ -54,6 +54,7 @@ public class GameController {
         if (status != -1) {
             cardGameLambdaQueryWrapper.eq(CardGame::getStatus, status);
         }
+        cardGameLambdaQueryWrapper.orderByDesc(CardGame::getStarttime);
         // 执行分页查询
         gameService.page(cardGamePage, cardGameLambdaQueryWrapper);
         // 返回分页数据

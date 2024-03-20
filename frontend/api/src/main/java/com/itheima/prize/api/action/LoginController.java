@@ -15,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -82,7 +83,12 @@ public class LoginController {
     @GetMapping("/logout")
     @ApiOperation(value = "退出")
     public ApiResult logout(HttpServletRequest request) {
-        request.getSession().removeAttribute("user");
+        //request.getSession().removeAttribute("user");
+        HttpSession session = request.getSession();
+        if (session != null) {
+            // 使会话失效
+            session.invalidate();
+        }
         return new ApiResult(1, "退出成功", null);
     }
 }

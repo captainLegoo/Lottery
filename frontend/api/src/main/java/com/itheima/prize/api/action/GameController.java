@@ -66,8 +66,14 @@ public class GameController {
             @ApiImplicitParam(name="gameid",value = "活动id",example = "1",required = true)
     })
     public ApiResult<CardGame> info(@PathVariable int gameid) {
-        //TODO
-        return null;
+        // 创建查询条件
+        LambdaQueryWrapper<CardGame> cardGameLambdaQueryWrapper = new LambdaQueryWrapper<>();
+        // 添加查询条件
+        cardGameLambdaQueryWrapper.eq(CardGame::getId, gameid);
+        // 执行查询
+        CardGame cardGame = gameService.getOne(cardGameLambdaQueryWrapper);
+        // 返回数据
+        return new ApiResult<>(1, "成功", cardGame);
     }
 
     @GetMapping("/products/{gameid}")

@@ -1,5 +1,6 @@
 package com.itheima.prize.api.action;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.itheima.prize.commons.db.entity.CardGame;
@@ -45,8 +46,18 @@ public class GameController {
             @ApiImplicitParam(name = "limit",value = "每页条数",defaultValue = "10",dataType = "int",example = "3",required = true)
     })
     public ApiResult list(@PathVariable int status,@PathVariable int curpage,@PathVariable int limit) {
-        //TODO
-        return null;
+        // 创建分页
+        Page<CardGame> cardGamePage = new Page<>(curpage, limit);
+        // 创建查询条件
+        LambdaQueryWrapper<CardGame> cardGameLambdaQueryWrapper = new LambdaQueryWrapper<>();
+        // 添加查询条件
+        if (status != -1) {
+            cardGameLambdaQueryWrapper.eq(CardGame::getStatus, status);
+        }
+        // 执行分页查询
+        gameService.page(cardGamePage, cardGameLambdaQueryWrapper);
+        // 返回分页数据
+        return new ApiResult(1, "成功", new PageBean<>(cardGamePage));
     }
 
     @GetMapping("/info/{gameid}")

@@ -37,8 +37,8 @@ public class LoginController {
     })
     public ApiResult login(HttpServletRequest request, @RequestParam String account, @RequestParam String password) {
         // 检查用户是否已经达到登录尝试上限
-        boolean isExistAccountInRedis = redisUtil.hasKey(account);
-        if (isExistAccountInRedis) {
+        Integer loginErrorCount = (Integer) redisUtil.get(RedisKeys.USERLOGINTIMES + account);
+        if (loginErrorCount != null && loginErrorCount >= 5) {
             return new ApiResult(0, "密码错误5次，请5分钟后再登录", null);
         }
 
@@ -66,14 +66,8 @@ public class LoginController {
             } else {
                 // 密码错误
                 redisUtil.incr(RedisKeys.USERLOGINTIMES + account, 1);
-                int loginErrorCount = (int) redisUtil.get(RedisKeys.USERLOGINTIMES + account);
-                if (loginErrorCount >= 5) {
-                    // 超过五次，在redis中设置该用户禁止登录五分钟
-                    redisUtil.set(account, "", 5 * 60);
-                    // 重置登录次数
-                    redisUtil.set(RedisKeys.USERLOGINTIMES + account, 0);
-                    return new ApiResult(0, "密码错误5次，请5分钟后再登录", null);
-                }
+                // 超过五次，在redis中设置该用户禁止登录五分钟
+                redisUtil.expire(RedisKeys.USERLOGINTIMES + account, 5 * 60);
             }
         }
         // 用户不存在

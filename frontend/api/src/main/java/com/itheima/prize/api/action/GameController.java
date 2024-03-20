@@ -82,8 +82,8 @@ public class GameController {
             @ApiImplicitParam(name="gameid",value = "活动id",example = "1",required = true)
     })
     public ApiResult<List<CardProductDto>> products(@PathVariable int gameid) {
-        //TODO
-        return null;
+        List<CardProductDto> cardProductDtoList = loadService.getByGameId(gameid);
+        return new ApiResult<>(1, "成功", cardProductDtoList);
     }
 
     @GetMapping("/hit/{gameid}/{curpage}/{limit}")

@@ -15,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -28,8 +29,6 @@ public class LoginController {
     @Autowired
     private RedisUtil redisUtil;
 
-    private final AtomicInteger loginErrorCount = new AtomicInteger(5);
-
     @PostMapping("/login")
     @ApiOperation(value = "登录")
     @ApiImplicitParams({
@@ -38,8 +37,8 @@ public class LoginController {
     })
     public ApiResult login(HttpServletRequest request, @RequestParam String account, @RequestParam String password) {
         // 检查用户是否已经达到登录尝试上限
-        boolean isExistAccountInRedis = redisUtil.hasKey(RedisKeys.USERLOGINTIMES + account);
-        if (isExistAccountInRedis) {
+        Integer loginErrorCount = (Integer) redisUtil.get(RedisKeys.USERLOGINTIMES + account);
+        if (loginErrorCount != null && loginErrorCount >= 5) {
             return new ApiResult(0, "密码错误5次，请5分钟后再登录", null);
         }
 
@@ -61,18 +60,14 @@ public class LoginController {
                 // 将用户信息存储在会话中
                 request.getSession().setAttribute("user", cardUser);
                 // 重置登录次数
-                loginErrorCount.set(5);
+                redisUtil.set(RedisKeys.USERLOGINTIMES + account, 0);
                 // 返回成功登录用户信息
                 return new ApiResult(1, "登录成功", cardUser);
             } else {
                 // 密码错误
-                if (loginErrorCount.decrementAndGet() <= 0) {
-                    // 超过五次，在redis中设置该用户禁止登录五分钟
-                    redisUtil.set(RedisKeys.USERLOGINTIMES + account, "", 5 * 60);
-                    // 重置登录次数
-                    loginErrorCount.set(5);
-                    return new ApiResult(0, "密码错误5次，请5分钟后再登录", null);
-                }
+                redisUtil.incr(RedisKeys.USERLOGINTIMES + account, 1);
+                // 超过五次，在redis中设置该用户禁止登录五分钟
+                redisUtil.expire(RedisKeys.USERLOGINTIMES + account, 5 * 60);
             }
         }
         // 用户不存在
@@ -82,7 +77,12 @@ public class LoginController {
     @GetMapping("/logout")
     @ApiOperation(value = "退出")
     public ApiResult logout(HttpServletRequest request) {
-        request.getSession().removeAttribute("user");
+        //request.getSession().removeAttribute("user");
+        HttpSession session = request.getSession();
+        if (session != null) {
+            // 使会话失效
+            session.invalidate();
+        }
         return new ApiResult(1, "退出成功", null);
     }
 }

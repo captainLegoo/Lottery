@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.Objects;
 
 @RestController
 @RequestMapping(value = "/api/user")
@@ -39,6 +40,10 @@ public class UserController {
     public ApiResult info(HttpServletRequest request) {
         // 通过session获取用户信息
         CardUser cardUser = (CardUser) request.getSession().getAttribute("user");
+        if (Objects.isNull(cardUser)) {
+            return new ApiResult(0, "登录超时",null);
+        }
+        // 获取user id
         Integer userId = cardUser.getId();
         // 构建用户dto
         CardUserDto cardUserDto = new CardUserDto(cardUser);

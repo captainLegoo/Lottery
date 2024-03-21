@@ -120,6 +120,7 @@ public class GameTask {
                 redisUtil.hset(RedisKeys.MAXENTER + gameId, userlevel.toString(), enterTimes);
             }
             // 4.3.抽奖令牌桶 双端队列 key:活动id Collection:从小到大右侧入列
+            Collections.sort(tokenList); // 待优化
             redisUtil.rightPushAll(RedisKeys.TOKENS + gameId, tokenList);
             // 4.4.奖品信息 k-v key:活动id value:奖品信息 (已在3.3.3.完成)
             //redisUtil.set(RedisKeys.TOKEN + gameId + "_" + token, productMap.get(productId), expire);

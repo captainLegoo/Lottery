@@ -80,7 +80,7 @@ public class GameTask {
             Collections.shuffle(productIdList);
 
             // 3、根据总数量生成奖品相关的令牌桶(时间戳)
-            List<Long> tokenList = new ArrayList<>();
+            List<Long> tokenList = new ArrayList<>(productIdList.size());
             // 3.1.获取活动开始时间
             Date gameStartTime = cardGame.getStarttime();
             long gameStartTimeStamp = gameStartTime.getTime();
@@ -89,8 +89,7 @@ public class GameTask {
             long gameEndTimeStamp = cardGameEndTime.getTime();
             // 3.3.计算出每个奖品的令牌桶-时间戳
             long duration = gameEndTimeStamp - gameStartTimeStamp;
-            int totalProductSize = productIdList.size();
-            for (int i = 0; i < totalProductSize; i++) {
+            for (int i = 0; i < productIdList.size(); i++) {
                 // 3.3.1.随机时间戳
                 long rnd = gameStartTimeStamp + new Random().nextInt((int) duration);
                 long token = rnd * 1000 + new Random().nextInt(999);
@@ -120,7 +119,7 @@ public class GameTask {
                 redisUtil.hset(RedisKeys.MAXENTER + gameId, userlevel.toString(), enterTimes);
             }
             // 4.3.抽奖令牌桶 双端队列 key:活动id Collection:从小到大右侧入列
-            Collections.sort(tokenList); // 待优化
+            Collections.sort(tokenList);
             redisUtil.rightPushAll(RedisKeys.TOKENS + gameId, tokenList);
             // 4.4.奖品信息 k-v key:活动id value:奖品信息 (已在3.3.3.完成)
             //redisUtil.set(RedisKeys.TOKEN + gameId + "_" + token, productMap.get(productId), expire);

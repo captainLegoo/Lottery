@@ -80,7 +80,7 @@ public class GameTask {
             Collections.shuffle(productIdList);
 
             // 3、根据总数量生成奖品相关的令牌桶(时间戳)
-            List<Long> tokenList = new LinkedList<>();
+            List<Long> tokenList = new ArrayList<>();
             // 3.1.获取活动开始时间
             Date gameStartTime = cardGame.getStarttime();
             long gameStartTimeStamp = gameStartTime.getTime();

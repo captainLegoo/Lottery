@@ -36,7 +36,7 @@ public class GameTask {
 
     @Scheduled(cron = "0 * * * * ?")
     public void execute() {
-        System.out.printf("scheduled!"+new Date());
+        //System.out.printf("scheduled!"+new Date());
         log.info("scheduled! -> {}", new Date());
         Map<Integer, CardProduct> productMap = new HashMap<>();
 

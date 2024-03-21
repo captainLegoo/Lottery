@@ -37,14 +37,7 @@ public class GameTask {
     @Scheduled(cron = "0 * * * * ?")
     public void execute() {
         System.out.printf("scheduled!"+new Date());
-        //TODO
-        // 缓存预热流程：
-        // 1、查询1分钟内的活动
-        // 2、循环遍历活动列表，挨个处理，假设当前取出的是A
-        // 3、查询A相关的奖品列表及数量
-        // 4、根据总数量⽣成奖品相关的令牌桶，详细设计参考《缓存预热设计》视频
-        // 5、查询A相关的活动策略：抽奖次数、中奖次数等，放⼊Redis
-
+        log.info("scheduled! -> {}", new Date());
         Map<Integer, CardProduct> productMap = new HashMap<>();
 
         // 1.查询1分钟内的活动
@@ -87,7 +80,7 @@ public class GameTask {
             Collections.shuffle(productIdList);
 
             // 3、根据总数量生成奖品相关的令牌桶(时间戳)
-            List<Long> tokenList = new ArrayList<>();
+            List<Long> tokenList = new LinkedList<>();
             // 3.1.获取活动开始时间
             Date gameStartTime = cardGame.getStarttime();
             long gameStartTimeStamp = gameStartTime.getTime();

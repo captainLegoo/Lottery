@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 import javax.servlet.http.HttpServletRequest;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.concurrent.ConcurrentSkipListMap;
 
 @RestController
 @RequestMapping("/api/act")
@@ -60,15 +61,14 @@ public class ActController {
 
         // 活动的奖品信息(暂定不显示)
         // 1.活动基本信息 k-v key:活动id value:活动对象
-        CardGame cardGame = (CardGame) redisUtil.get(RedisKeys.INFO + gameid);
-        cacheWarmUPGameInfo.put(RedisKeys.INFO + gameid, cardGame);
+        cacheWarmUPGameInfo.put(RedisKeys.INFO + gameid, redisUtil.get(RedisKeys.INFO + gameid));
 
         // 2.每个令牌桶的奖品信息 k-v key:活动id value:奖品信息
-        Map<Object, CardProduct> cardProductMap = new HashMap<>();
+        Map<Object, CardProduct> cardProductMap = new ConcurrentSkipListMap<>();
         List<Object> tokenList = redisUtil.lrange(RedisKeys.TOKENS + gameid, 0L, -1L);
         for (Object token : tokenList) {
             CardProduct cardProduct = (CardProduct) redisUtil.get(RedisKeys.TOKEN + gameid + "_" + token);
-            String dateTimeString = tokenToDate((Long) token);
+            String dateTimeString = tokenConvertToDate((Long) token);
             // 通过redis获取该时间错对应的奖品信息，并存入map
             cardProductMap.put(dateTimeString, cardProduct);
         }
@@ -76,16 +76,15 @@ public class ActController {
 
         // 3.活动策略 hset group:活动id key:用户等级 value:策略值
         // 3.1.获取该会员最大中奖次数
-        Map<Object, Object> maxGoalMap = redisUtil.hmget(RedisKeys.MAXGOAL + gameid);
-        cacheWarmUPGameInfo.put(RedisKeys.MAXGOAL + gameid, maxGoalMap);
+        cacheWarmUPGameInfo.put(RedisKeys.MAXGOAL + gameid, redisUtil.hmget(RedisKeys.MAXGOAL + gameid));
         // 3.2.获取该会员可抽奖次数
-        Map<Object, Object> maxEnterMap = redisUtil.hmget(RedisKeys.MAXENTER + gameid);
-        cacheWarmUPGameInfo.put(RedisKeys.MAXENTER + gameid, maxEnterMap);
+        cacheWarmUPGameInfo.put(RedisKeys.MAXENTER + gameid, redisUtil.hmget(RedisKeys.MAXENTER + gameid));
 
+        // 4.返回缓存信息
         return new ApiResult(200, "缓存信息", cacheWarmUPGameInfo);
     }
 
-    private String tokenToDate(Long token){
+    private String tokenConvertToDate(Long token){
         return DATE_FORMAT.format(new Date(token / 1000));
     }
 }

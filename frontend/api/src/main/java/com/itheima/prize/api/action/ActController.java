@@ -59,7 +59,7 @@ public class ActController {
         // 每次对map进行重置
         cacheWarmUPGameInfo = new HashMap<>();
 
-        // 活动的奖品信息(暂定不显示)
+        // (暂定不显示:单个活动的具体奖品信息)
         // 1.活动基本信息 k-v key:活动id value:活动对象
         cacheWarmUPGameInfo.put(RedisKeys.INFO + gameid, redisUtil.get(RedisKeys.INFO + gameid));
 

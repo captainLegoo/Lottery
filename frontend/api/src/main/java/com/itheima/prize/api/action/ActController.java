@@ -63,6 +63,9 @@ public class ActController {
         // (暂定不显示:单个活动的具体奖品信息)
         // 1.活动基本信息 k-v key:活动id value:活动对象
         CardGame cardGame = (CardGame) redisUtil.get(RedisKeys.INFO + gameid);
+        if (Objects.isNull(cardGame)) {
+            return new ApiResult(200, "缓存信息", null);
+        }
         cacheWarmUPGameInfo.put(RedisKeys.INFO + gameid, cardGame);
 
         // 2.活动策略 hset group:活动id key:用户等级 value:策略值

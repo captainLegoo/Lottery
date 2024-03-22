@@ -38,19 +38,11 @@ public class GameTask {
     public void execute() {
         //System.out.printf("scheduled!"+new Date());
         log.info("scheduled! -> {}", new Date());
+        // 获得的奖品信息 key:奖品id value:奖品信息
         Map<Integer, CardProduct> productMap = new HashMap<>();
 
         // 1.查询1分钟内的活动
-        // 1.1.获取当前时间
-        long currentTimeStamp = new Date().getTime();
-        // 1.2.获取全部的game
-        List<CardGame> cardGameList = gameService.list();
-        // 1.3.过滤哪些game是在下一个1分钟
-        cardGameList = cardGameList.stream().filter(cardGame -> {
-            long gameStartTimeStamp = cardGame.getStarttime().getTime();
-            // 1.4.返回在1分钟之内的game
-            return gameStartTimeStamp > currentTimeStamp && Math.abs(gameStartTimeStamp - currentTimeStamp) <= 60 * 1000;
-        }).collect(Collectors.toList());
+        List<CardGame> cardGameList = getNextOneMinuteCardGameList();
 
         // 2.循环遍历活动列表，挨个处理
         for (CardGame cardGame : cardGameList) {
@@ -124,5 +116,23 @@ public class GameTask {
             // 4.4.奖品信息 k-v key:活动id value:奖品信息 (已在3.3.3.完成)
             //redisUtil.set(RedisKeys.TOKEN + gameId + "_" + token, productMap.get(productId), expire);
         }
+    }
+
+    /**
+     * 获取1分钟内活动
+     * @return
+     */
+    private List<CardGame> getNextOneMinuteCardGameList() {
+        // 1.1.获取当前时间
+        long currentTimeStamp = new Date().getTime();
+        // 1.2.获取全部的game
+        List<CardGame> cardGameList = gameService.list();
+        // 1.3.过滤哪些game是在下一个1分钟
+        cardGameList = cardGameList.stream().filter(cardGame -> {
+            long gameStartTimeStamp = cardGame.getStarttime().getTime();
+            // 1.4.返回在1分钟之内的game
+            return gameStartTimeStamp > currentTimeStamp && Math.abs(gameStartTimeStamp - currentTimeStamp) <= 60 * 1000;
+        }).collect(Collectors.toList());
+        return cardGameList;
     }
 }

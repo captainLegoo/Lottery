@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 import javax.servlet.http.HttpServletRequest;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 
 @RestController
@@ -57,13 +58,20 @@ public class ActController {
     public ApiResult info(@PathVariable int gameid){
         log.info("info -> 获取活动相关的缓存信息");
         // 每次对map进行重置
-        cacheWarmUPGameInfo = new HashMap<>();
+        cacheWarmUPGameInfo = new LinkedHashMap<>();
 
         // (暂定不显示:单个活动的具体奖品信息)
         // 1.活动基本信息 k-v key:活动id value:活动对象
-        cacheWarmUPGameInfo.put(RedisKeys.INFO + gameid, redisUtil.get(RedisKeys.INFO + gameid));
+        CardGame cardGame = (CardGame) redisUtil.get(RedisKeys.INFO + gameid);
+        cacheWarmUPGameInfo.put(RedisKeys.INFO + gameid, cardGame);
 
-        // 2.每个令牌桶的奖品信息 k-v key:活动id value:奖品信息
+        // 2.活动策略 hset group:活动id key:用户等级 value:策略值
+        // 2.1.获取该会员最大中奖次数
+        cacheWarmUPGameInfo.put(RedisKeys.MAXGOAL + gameid, redisUtil.hmget(RedisKeys.MAXGOAL + gameid));
+        // 2.2.获取该会员可抽奖次数
+        cacheWarmUPGameInfo.put(RedisKeys.MAXENTER + gameid, redisUtil.hmget(RedisKeys.MAXENTER + gameid));
+
+        // 3.每个令牌桶的奖品信息 k-v key:活动id value:奖品信息
         Map<Object, CardProduct> cardProductMap = new ConcurrentSkipListMap<>();
         List<Object> tokenList = redisUtil.lrange(RedisKeys.TOKENS + gameid, 0L, -1L);
         for (Object token : tokenList) {
@@ -73,12 +81,6 @@ public class ActController {
             cardProductMap.put(dateTimeString, cardProduct);
         }
         cacheWarmUPGameInfo.put(RedisKeys.TOKENS + gameid, cardProductMap);
-
-        // 3.活动策略 hset group:活动id key:用户等级 value:策略值
-        // 3.1.获取该会员最大中奖次数
-        cacheWarmUPGameInfo.put(RedisKeys.MAXGOAL + gameid, redisUtil.hmget(RedisKeys.MAXGOAL + gameid));
-        // 3.2.获取该会员可抽奖次数
-        cacheWarmUPGameInfo.put(RedisKeys.MAXENTER + gameid, redisUtil.hmget(RedisKeys.MAXENTER + gameid));
 
         // 4.返回缓存信息
         return new ApiResult(200, "缓存信息", cacheWarmUPGameInfo);

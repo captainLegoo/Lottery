@@ -51,8 +51,13 @@ public class GameController {
         // 创建查询条件
         LambdaQueryWrapper<CardGame> cardGameLambdaQueryWrapper = new LambdaQueryWrapper<>();
         // 添加查询条件
-        if (status != -1) {
-            cardGameLambdaQueryWrapper.eq(CardGame::getStatus, status);
+        Date now = new Date();
+        if (status == 0) {
+            cardGameLambdaQueryWrapper.gt(CardGame::getStarttime, now);
+        } else if (status == 1) {
+            cardGameLambdaQueryWrapper.le(CardGame::getStarttime, now).gt(CardGame::getEndtime, now);
+        } else if (status == 2) {
+            cardGameLambdaQueryWrapper.le(CardGame::getEndtime, now);
         }
         cardGameLambdaQueryWrapper.orderByDesc(CardGame::getStarttime);
         // 执行分页查询

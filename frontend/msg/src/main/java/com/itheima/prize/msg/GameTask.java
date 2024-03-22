@@ -33,6 +33,8 @@ public class GameTask {
     private RedisUtil redisUtil;
     @Autowired
     private CardProductService cardProductService;
+    private static final Integer NEW_ACTIVITY = 0;
+    private static final Integer LOADED_ACTIVITY = 1;
 
     @Scheduled(cron = "0 * * * * ?")
     public void execute() {
@@ -115,6 +117,10 @@ public class GameTask {
             redisUtil.rightPushAll(RedisKeys.TOKENS + gameId, tokenList);
             // 4.4.奖品信息 k-v key:活动id value:奖品信息 (已在3.3.3.完成)
             //redisUtil.set(RedisKeys.TOKEN + gameId + "_" + token, productMap.get(productId), expire);
+
+            // 5. 将状态修改为已加载
+            cardGame.setStatus(LOADED_ACTIVITY);
+            gameService.updateById(cardGame);
         }
     }
 
@@ -131,7 +137,9 @@ public class GameTask {
         cardGameList = cardGameList.stream().filter(cardGame -> {
             long gameStartTimeStamp = cardGame.getStarttime().getTime();
             // 1.4.返回在1分钟之内的game
-            return gameStartTimeStamp > currentTimeStamp && Math.abs(gameStartTimeStamp - currentTimeStamp) <= 60 * 1000;
+            return Objects.equals(cardGame.getStatus(), NEW_ACTIVITY)
+                    && gameStartTimeStamp > currentTimeStamp
+                    && Math.abs(gameStartTimeStamp - currentTimeStamp) <= 60 * 1000;
         }).collect(Collectors.toList());
         return cardGameList;
     }

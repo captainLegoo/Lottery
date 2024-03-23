@@ -107,13 +107,7 @@ public class ActController {
         redisUtil.set(RedisKeys.USERENTER + gameid + "_" + userId, ++userEnterCount);
 
         // 异步通知参与活动信息
-        CardUserGame cardUserGame = new CardUserGame();
-        cardUserGame.setUserid(userId);
-        cardUserGame.setGameid(gameid);
-        cardUserGame.setCreatetime(currentDate);
-        String cardUserGameJson = JSON.toJSONString(cardUserGame);
-        rabbitTemplate.convertAndSend(RabbitKeys.EXCHANGE_DIRECT, RabbitKeys.QUEUE_PLAY, cardUserGameJson);
-        log.info("用户参与活动信息 cardUserGame -> {}", cardUserGame);
+        rabbitmqSendPlayGameMsg(gameid, userId, currentDate);
 
         // 抽令牌
         Long token = luaScript.tokenCheck(RedisKeys.TOKENS + gameid, String.valueOf(new Date().getTime()));
@@ -129,18 +123,32 @@ public class ActController {
             log.info("token有效，中奖！ -> {}, {}", tokenConvertToOriginDateString(token) , cardProduct);
 
             // 异步通知中奖信息
-            CardUserHit cardUserHit = new CardUserHit();
-            cardUserHit.setGameid(gameid);
-            cardUserHit.setUserid(userId);
-            cardUserHit.setProductid(cardProduct.getId());
-            cardUserHit.setHittime(currentDate);
-            String cardUserHitJson = JSON.toJSONString(cardUserHit);
-            rabbitTemplate.convertAndSend(RabbitKeys.EXCHANGE_DIRECT, RabbitKeys.QUEUE_HIT, cardUserHitJson);
-            log.info("已成功发送中奖信息 cardUserHit -> {}", cardUserHit);
+            rabbitmqSendHitMsg(gameid, userId, cardProduct, currentDate);
 
             // 返回恭喜中奖与数据
             return new ApiResult<>(1,"恭喜中奖",cardProduct);
         }
+    }
+
+    private void rabbitmqSendPlayGameMsg(int gameid, Integer userId, Date currentDate) {
+        CardUserGame cardUserGame = new CardUserGame();
+        cardUserGame.setUserid(userId);
+        cardUserGame.setGameid(gameid);
+        cardUserGame.setCreatetime(currentDate);
+        String cardUserGameJson = JSON.toJSONString(cardUserGame);
+        rabbitTemplate.convertAndSend(RabbitKeys.EXCHANGE_DIRECT, RabbitKeys.QUEUE_PLAY, cardUserGameJson);
+        log.info("用户参与活动信息 cardUserGame -> {}", cardUserGame);
+    }
+
+    private void rabbitmqSendHitMsg(int gameid, Integer userId, CardProduct cardProduct, Date currentDate) {
+        CardUserHit cardUserHit = new CardUserHit();
+        cardUserHit.setGameid(gameid);
+        cardUserHit.setUserid(userId);
+        cardUserHit.setProductid(cardProduct.getId());
+        cardUserHit.setHittime(currentDate);
+        String cardUserHitJson = JSON.toJSONString(cardUserHit);
+        rabbitTemplate.convertAndSend(RabbitKeys.EXCHANGE_DIRECT, RabbitKeys.QUEUE_HIT, cardUserHitJson);
+        log.info("已成功发送中奖信息 cardUserHit -> {}", cardUserHit);
     }
 
     @GetMapping("/info/{gameid}")

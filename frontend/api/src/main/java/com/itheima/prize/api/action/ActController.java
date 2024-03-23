@@ -105,7 +105,7 @@ public class ActController {
         // 记录用户参与次数
         redisUtil.set(RedisKeys.USERENTER + gameid + "_" + userId, ++userEnterCount);
 
-        // TODO 异步通知参与活动信息
+        // 异步通知参与活动信息
         CardUserGame cardUserGame = new CardUserGame();
         cardUserGame.setUserid(userId);
         cardUserGame.setGameid(gameid);
@@ -124,12 +124,11 @@ public class ActController {
         } else {
             //token有效，中奖！
             CardProduct cardProduct = (CardProduct) redisUtil.get(RedisKeys.TOKEN + gameid + "_" + token);
-            // TODO cardProduct为空
             // 记录用户中奖数
             redisUtil.set(RedisKeys.USERHIT + gameid + "_" + userId, ++userGoalCount);
             log.info("token有效，中奖！ -> {}, {}", tokenConvertToOriginDateString(token) , cardProduct);
 
-            // TODO 异步通知中奖信息
+            // 异步通知中奖信息
             CardUserHit cardUserHit = new CardUserHit();
             cardUserHit.setGameid(gameid);
             cardUserHit.setUserid(userId);

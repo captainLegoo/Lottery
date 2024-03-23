@@ -193,8 +193,4 @@ public class ActController {
     private String tokenConvertToOriginDateString(Long token){
         return DATE_FORMAT.format(new Date(token / 1000));
     }
-
-    private Date tokenConvertToOriginDate(Long token){
-        return new Date(token / 1000);
-    }
 }

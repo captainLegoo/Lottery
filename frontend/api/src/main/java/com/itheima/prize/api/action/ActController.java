@@ -1,10 +1,10 @@
 package com.itheima.prize.api.action;
 
+import com.alibaba.fastjson.JSON;
 import com.itheima.prize.api.config.LuaScript;
+import com.itheima.prize.commons.config.RabbitKeys;
 import com.itheima.prize.commons.config.RedisKeys;
-import com.itheima.prize.commons.db.entity.CardGame;
-import com.itheima.prize.commons.db.entity.CardProduct;
-import com.itheima.prize.commons.db.entity.CardUser;
+import com.itheima.prize.commons.db.entity.*;
 import com.itheima.prize.commons.utils.ApiResult;
 import com.itheima.prize.commons.utils.RedisUtil;
 import io.swagger.annotations.Api;
@@ -105,6 +105,15 @@ public class ActController {
         // 记录用户参与次数
         redisUtil.set(RedisKeys.USERENTER + gameid + "_" + userId, ++userEnterCount);
 
+        // TODO 异步通知参与活动信息
+        CardUserGame cardUserGame = new CardUserGame();
+        cardUserGame.setUserid(userId);
+        cardUserGame.setGameid(gameid);
+        cardUserGame.setCreatetime(new Date(currentTimeStamp));
+        String cardUserGameJson = JSON.toJSONString(cardUserGame);
+        rabbitTemplate.convertAndSend(RabbitKeys.EXCHANGE_DIRECT, RabbitKeys.QUEUE_PLAY, cardUserGameJson);
+        log.info("用户参与活动信息 cardUserGame -> {}", cardUserGame);
+
         // 抽令牌
         //Long token = luaScript.tokenCheck("game_" + gameid, String.valueOf(new Date().getTime()));
         Long token = luaScript.tokenCheck(RedisKeys.TOKENS + gameid, String.valueOf(new Date().getTime()));
@@ -115,11 +124,20 @@ public class ActController {
         } else {
             //token有效，中奖！
             CardProduct cardProduct = (CardProduct) redisUtil.get(RedisKeys.TOKEN + gameid + "_" + token);
+            // TODO cardProduct为空
             // 记录用户中奖数
             redisUtil.set(RedisKeys.USERHIT + gameid + "_" + userId, ++userGoalCount);
-            log.info("token有效，中奖！ -> {}, {}", tokenConvertToDate(token) , cardProduct);
+            log.info("token有效，中奖！ -> {}, {}", tokenConvertToOriginDateString(token) , cardProduct);
 
             // TODO 异步通知中奖信息
+            CardUserHit cardUserHit = new CardUserHit();
+            cardUserHit.setGameid(gameid);
+            cardUserHit.setUserid(userId);
+            cardUserHit.setProductid(cardProduct.getId());
+            cardUserHit.setHittime(new Date(currentTimeStamp));
+            String cardUserHitJson = JSON.toJSONString(cardUserHit);
+            rabbitTemplate.convertAndSend(RabbitKeys.EXCHANGE_DIRECT, RabbitKeys.QUEUE_HIT, cardUserHitJson);
+            log.info("已成功发送中奖信息 cardUserHit -> {}", cardUserHit);
 
             // 返回恭喜中奖与数据
             return new ApiResult<>(1,"恭喜中奖",cardProduct);
@@ -155,7 +173,7 @@ public class ActController {
         List<Object> tokenList = redisUtil.lrange(RedisKeys.TOKENS + gameid, 0L, -1L);
         for (Object token : tokenList) {
             CardProduct cardProduct = (CardProduct) redisUtil.get(RedisKeys.TOKEN + gameid + "_" + token);
-            String dateTimeString = tokenConvertToDate((Long) token);
+            String dateTimeString = tokenConvertToOriginDateString((Long) token);
             // 通过redis获取该时间错对应的奖品信息，并存入map
             cardProductMap.put(dateTimeString, cardProduct);
         }
@@ -165,7 +183,11 @@ public class ActController {
         return new ApiResult(200, "缓存信息", cacheWarmUPGameInfo);
     }
 
-    private String tokenConvertToDate(Long token){
+    private String tokenConvertToOriginDateString(Long token){
         return DATE_FORMAT.format(new Date(token / 1000));
+    }
+
+    private Date tokenConvertToOriginDate(Long token){
+        return new Date(token / 1000);
     }
 }

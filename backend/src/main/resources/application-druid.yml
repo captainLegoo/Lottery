@@ -6,7 +6,7 @@ spring:
         druid:
             # 主库数据源
             master:
-                url: jdbc:mysql://192.168.64.128:3306/prize?useUnicode=true&characterEncoding=utf-8
+                url: jdbc:mysql://192.168.64.128:3306/prize?useUnicode=true&characterEncoding=utf-8&useSSL=false
                 username: root
                 password: root
             # 从库数据源

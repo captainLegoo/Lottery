@@ -116,7 +116,6 @@ public class ActController {
         log.info("用户参与活动信息 cardUserGame -> {}", cardUserGame);
 
         // 抽令牌
-        //Long token = luaScript.tokenCheck("game_" + gameid, String.valueOf(new Date().getTime()));
         Long token = luaScript.tokenCheck(RedisKeys.TOKENS + gameid, String.valueOf(new Date().getTime()));
         if (token == 0L) {
             return new ApiResult(-1,"奖品已抽光",null);

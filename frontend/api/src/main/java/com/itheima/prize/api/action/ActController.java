@@ -71,7 +71,7 @@ public class ActController {
             redisUtil.set(RedisKeys.USERENTER + gameid + "_" + userId, 0);
             userEnterCount = 0;
         }
-        // // 如果用户中奖次数为空，则初始化为 0
+        // 如果用户中奖次数为空，则初始化为 0
         if (Objects.isNull(userGoalCount)) {
             redisUtil.set(RedisKeys.USERHIT + gameid + "_" + userId, 0);
             userGoalCount = 0;

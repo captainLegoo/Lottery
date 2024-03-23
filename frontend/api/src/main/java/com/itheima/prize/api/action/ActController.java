@@ -49,9 +49,6 @@ public class ActController {
     public ApiResult<Object> act(@PathVariable int gameid, HttpServletRequest request){
         // 用户未登录
         CardUser cardUser = (CardUser) request.getSession().getAttribute("user");
-        //if (Objects.isNull(cardGame)) {
-        //    return new ApiResult(-1, "活动不存在", null);
-        //}
         if (Objects.isNull(cardUser)) {
             return new ApiResult(-1, "未登录", null);
         }
@@ -59,6 +56,9 @@ public class ActController {
         Integer userLevel = cardUser.getLevel();
         // 获取活动信息-基本信息/会员可抽奖次数/会员最大中奖次数
         CardGame cardGame = (CardGame) redisUtil.get(RedisKeys.INFO + gameid);
+        if (Objects.isNull(cardGame)) {
+            return new ApiResult(-1, "活动不存在", null);
+        }
         Integer enterTimes = (Integer) redisUtil.hget(RedisKeys.MAXENTER + gameid, userLevel.toString());
         Integer goalTimes = (Integer) redisUtil.hget(RedisKeys.MAXGOAL + gameid, userLevel.toString());
         // 获取用户已抽奖次数

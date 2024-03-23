@@ -3,7 +3,6 @@ package com.itheima.prize.msg;
 import com.alibaba.fastjson.JSON;
 import com.itheima.prize.commons.config.RabbitKeys;
 import com.itheima.prize.commons.db.entity.CardUserHit;
-import com.itheima.prize.commons.db.mapper.CardUserHitMapper;
 import com.itheima.prize.commons.db.service.CardUserHitService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,6 +22,10 @@ public class PrizeHitReceiver {
     @RabbitHandler
     public void processMessage(String message) {
         logger.info("user hit : message={}", message);
-        //TODO
+        //解析消息
+        CardUserHit cardUserHit = JSON.parseObject(message, CardUserHit.class);
+        logger.info("user hit : cardUserHit={}", cardUserHit);
+        // 保存用户中奖信息到数据库
+        hitService.save(cardUserHit);
     }
 }

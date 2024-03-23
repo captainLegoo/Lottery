@@ -78,7 +78,8 @@ public class ActController {
         }
 
         // 获取当前时间戳
-        long currentTimeStamp = new Date().getTime();
+        Date currentDate = new Date();
+        long currentTimeStamp = currentDate.getTime();
         // 获取开始时间戳
         long startTimeStamp = cardGame.getStarttime().getTime();
         // 获取结束时间戳
@@ -109,7 +110,7 @@ public class ActController {
         CardUserGame cardUserGame = new CardUserGame();
         cardUserGame.setUserid(userId);
         cardUserGame.setGameid(gameid);
-        cardUserGame.setCreatetime(new Date(currentTimeStamp));
+        cardUserGame.setCreatetime(currentDate);
         String cardUserGameJson = JSON.toJSONString(cardUserGame);
         rabbitTemplate.convertAndSend(RabbitKeys.EXCHANGE_DIRECT, RabbitKeys.QUEUE_PLAY, cardUserGameJson);
         log.info("用户参与活动信息 cardUserGame -> {}", cardUserGame);
@@ -133,7 +134,7 @@ public class ActController {
             cardUserHit.setGameid(gameid);
             cardUserHit.setUserid(userId);
             cardUserHit.setProductid(cardProduct.getId());
-            cardUserHit.setHittime(new Date(currentTimeStamp));
+            cardUserHit.setHittime(currentDate);
             String cardUserHitJson = JSON.toJSONString(cardUserHit);
             rabbitTemplate.convertAndSend(RabbitKeys.EXCHANGE_DIRECT, RabbitKeys.QUEUE_HIT, cardUserHitJson);
             log.info("已成功发送中奖信息 cardUserHit -> {}", cardUserHit);

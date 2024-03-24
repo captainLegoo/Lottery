@@ -111,4 +111,15 @@ public class CardProduct implements Serializable {
     public void setPrice(BigDecimal price) {
         this.price = price;
     }
+
+    @Override
+    public String toString() {
+        return "CardProduct{" +
+                "id=" + id +
+                ", name='" + name + '\'' +
+                ", pic='" + pic + '\'' +
+                ", info='" + info + '\'' +
+                ", price=" + price +
+                '}';
+    }
 }

@@ -92,4 +92,14 @@ public class CardUserGame implements Serializable {
     public void setCreatetime(Date createtime) {
         this.createtime = createtime;
     }
+
+    @Override
+    public String toString() {
+        return "CardUserGame{" +
+                "id=" + id +
+                ", userid=" + userid +
+                ", gameid=" + gameid +
+                ", createtime=" + createtime +
+                '}';
+    }
 }

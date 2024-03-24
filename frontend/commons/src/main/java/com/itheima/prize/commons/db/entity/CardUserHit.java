@@ -111,4 +111,15 @@ public class CardUserHit implements Serializable {
     public void setHittime(Date hittime) {
         this.hittime = hittime;
     }
+
+    @Override
+    public String toString() {
+        return "CardUserHit{" +
+                "id=" + id +
+                ", gameid=" + gameid +
+                ", userid=" + userid +
+                ", productid=" + productid +
+                ", hittime=" + hittime +
+                '}';
+    }
 }

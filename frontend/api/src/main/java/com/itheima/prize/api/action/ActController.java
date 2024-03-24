@@ -1,6 +1,8 @@
 package com.itheima.prize.api.action;
 
+import com.alibaba.fastjson.JSON;
 import com.itheima.prize.api.config.LuaScript;
+import com.itheima.prize.commons.config.RabbitKeys;
 import com.itheima.prize.commons.config.RedisKeys;
 import com.itheima.prize.commons.db.entity.*;
 import com.itheima.prize.commons.utils.ApiResult;
@@ -21,7 +23,6 @@ import org.springframework.web.bind.annotation.RestController;
 import javax.servlet.http.HttpServletRequest;
 import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 
 @RestController
@@ -46,8 +47,108 @@ public class ActController {
             @ApiImplicitParam(name="gameid",value = "活动id",example = "1",required = true)
     })
     public ApiResult<Object> act(@PathVariable int gameid, HttpServletRequest request){
-        //TODO
-        return null;
+        // 用户未登录
+        CardUser cardUser = (CardUser) request.getSession().getAttribute("user");
+        if (Objects.isNull(cardUser)) {
+            return new ApiResult(-1, "未登录", null);
+        }
+        Integer userId = cardUser.getId();
+        Integer userLevel = cardUser.getLevel();
+        // 获取活动信息-基本信息/会员可抽奖次数/会员最大中奖次数
+        CardGame cardGame = (CardGame) redisUtil.get(RedisKeys.INFO + gameid);
+        if (Objects.isNull(cardGame)) {
+            return new ApiResult(-1, "活动不存在", null);
+        }
+        Integer enterTimes = (Integer) redisUtil.hget(RedisKeys.MAXENTER + gameid, userLevel.toString());
+        Integer goalTimes = (Integer) redisUtil.hget(RedisKeys.MAXGOAL + gameid, userLevel.toString());
+        // 获取用户已抽奖次数
+        Integer userEnterCount = (Integer) redisUtil.get(RedisKeys.USERENTER + gameid + "_" + userId);
+        // 获取用户已中奖次数
+        Integer userGoalCount = (Integer) redisUtil.get(RedisKeys.USERHIT + gameid + "_" + userId);
+
+        // 如果用户抽奖次数为空，则初始化为 0
+        if (Objects.isNull(userEnterCount)) {
+            redisUtil.set(RedisKeys.USERENTER + gameid + "_" + userId, 0);
+            userEnterCount = 0;
+        }
+        // 如果用户中奖次数为空，则初始化为 0
+        if (Objects.isNull(userGoalCount)) {
+            redisUtil.set(RedisKeys.USERHIT + gameid + "_" + userId, 0);
+            userGoalCount = 0;
+        }
+
+        // 获取当前时间戳
+        Date currentDate = new Date();
+        long currentTimeStamp = currentDate.getTime();
+        // 获取开始时间戳
+        long startTimeStamp = cardGame.getStarttime().getTime();
+        // 获取结束时间戳
+        long endTimeStamp = cardGame.getEndtime().getTime();
+        // 活动未开始
+        if (startTimeStamp > currentTimeStamp) {
+            return new ApiResult(-1, "活动未开始", null);
+        }
+        // 活动已结束
+        if (endTimeStamp < currentTimeStamp) {
+            return new ApiResult(-1, "活动已结束", null);
+        }
+
+        // 您的抽奖次数已用完
+        if (enterTimes == null || userEnterCount >= enterTimes) {
+            return new ApiResult(-1, "您的抽奖次数已用完", null);
+        }
+
+        // 您已达到最大中奖数
+        if (goalTimes == null || userGoalCount >= goalTimes) {
+            return new ApiResult(-1, "您已达到最大中奖数", null);
+        }
+
+        // 记录用户参与次数
+        redisUtil.set(RedisKeys.USERENTER + gameid + "_" + userId, ++userEnterCount);
+
+        // 异步通知参与活动信息
+        rabbitmqSendPlayGameMsg(gameid, userId, currentDate);
+
+        // 抽令牌
+        Long token = luaScript.tokenCheck(RedisKeys.TOKENS + gameid, String.valueOf(new Date().getTime()));
+        if (token == 0L) {
+            return new ApiResult(-1,"奖品已抽光",null);
+        } else if (token == 1L) {
+            return new ApiResult(0,"未中奖",null);
+        } else {
+            //token有效，中奖！
+            CardProduct cardProduct = (CardProduct) redisUtil.get(RedisKeys.TOKEN + gameid + "_" + token);
+            // 记录用户中奖数
+            redisUtil.set(RedisKeys.USERHIT + gameid + "_" + userId, ++userGoalCount);
+            log.info("token有效，中奖！ -> {}, {}", tokenConvertToOriginDateString(token) , cardProduct);
+
+            // 异步通知中奖信息
+            rabbitmqSendHitMsg(gameid, userId, cardProduct, currentDate);
+
+            // 返回恭喜中奖与数据
+            return new ApiResult<>(1,"恭喜中奖",cardProduct);
+        }
+    }
+
+    private void rabbitmqSendPlayGameMsg(int gameid, Integer userId, Date currentDate) {
+        CardUserGame cardUserGame = new CardUserGame();
+        cardUserGame.setUserid(userId);
+        cardUserGame.setGameid(gameid);
+        cardUserGame.setCreatetime(currentDate);
+        String cardUserGameJson = JSON.toJSONString(cardUserGame);
+        rabbitTemplate.convertAndSend(RabbitKeys.EXCHANGE_DIRECT, RabbitKeys.QUEUE_PLAY, cardUserGameJson);
+        log.info("用户参与活动信息 cardUserGame -> {}", cardUserGame);
+    }
+
+    private void rabbitmqSendHitMsg(int gameid, Integer userId, CardProduct cardProduct, Date currentDate) {
+        CardUserHit cardUserHit = new CardUserHit();
+        cardUserHit.setGameid(gameid);
+        cardUserHit.setUserid(userId);
+        cardUserHit.setProductid(cardProduct.getId());
+        cardUserHit.setHittime(currentDate);
+        String cardUserHitJson = JSON.toJSONString(cardUserHit);
+        rabbitTemplate.convertAndSend(RabbitKeys.EXCHANGE_DIRECT, RabbitKeys.QUEUE_HIT, cardUserHitJson);
+        log.info("已成功发送中奖信息 cardUserHit -> {}", cardUserHit);
     }
 
     @GetMapping("/info/{gameid}")
@@ -79,7 +180,7 @@ public class ActController {
         List<Object> tokenList = redisUtil.lrange(RedisKeys.TOKENS + gameid, 0L, -1L);
         for (Object token : tokenList) {
             CardProduct cardProduct = (CardProduct) redisUtil.get(RedisKeys.TOKEN + gameid + "_" + token);
-            String dateTimeString = tokenConvertToDate((Long) token);
+            String dateTimeString = tokenConvertToOriginDateString((Long) token);
             // 通过redis获取该时间错对应的奖品信息，并存入map
             cardProductMap.put(dateTimeString, cardProduct);
         }
@@ -89,7 +190,7 @@ public class ActController {
         return new ApiResult(200, "缓存信息", cacheWarmUPGameInfo);
     }
 
-    private String tokenConvertToDate(Long token){
+    private String tokenConvertToOriginDateString(Long token){
         return DATE_FORMAT.format(new Date(token / 1000));
     }
 }

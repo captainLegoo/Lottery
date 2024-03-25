@@ -5,6 +5,7 @@ import com.itheima.prize.commons.config.RedisKeys;
 import com.itheima.prize.commons.db.entity.*;
 import com.itheima.prize.commons.db.service.*;
 import com.itheima.prize.commons.utils.RedisUtil;
+import org.apache.commons.lang3.time.DateUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -128,17 +129,13 @@ public class GameTask {
      */
     private List<CardGame> getNextOneMinuteCardGameList() {
         // 1.1.获取当前时间
-        long currentTimeStamp = new Date().getTime();
-        // 1.2.获取全部的game
-        List<CardGame> cardGameList = gameService.list();
-        // 1.3.过滤哪些game是在下一个1分钟
-        cardGameList = cardGameList.stream().filter(cardGame -> {
-            long gameStartTimeStamp = cardGame.getStarttime().getTime();
-            // 1.4.返回在1分钟之内的game
-            return Objects.equals(cardGame.getStatus(), NEW_ACTIVITY)
-                    && gameStartTimeStamp > currentTimeStamp
-                    && Math.abs(gameStartTimeStamp - currentTimeStamp) <= 60 * 1000;
-        }).collect(Collectors.toList());
-        return cardGameList;
+        Date currentDate = new Date();
+        // 1.2.添加查询条件
+        LambdaQueryWrapper<CardGame> cardGameLambdaQueryWrapper = new LambdaQueryWrapper<>();
+        cardGameLambdaQueryWrapper.ge(CardGame::getStarttime, currentDate);
+        cardGameLambdaQueryWrapper.le(CardGame::getStarttime, DateUtils.addMinutes(currentDate, 1));
+        cardGameLambdaQueryWrapper.eq(CardGame::getStatus, NEW_ACTIVITY);
+        // 1.3.查询符合条件的活动
+        return gameService.list(cardGameLambdaQueryWrapper);
     }
 }

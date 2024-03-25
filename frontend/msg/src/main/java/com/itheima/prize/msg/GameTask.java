@@ -115,6 +115,11 @@ public class GameTask {
                 redisUtil.hset(RedisKeys.MAXENTER + gameId, userlevel.toString(), enterTimes);
                 redisUtil.expire(RedisKeys.MAXENTER + gameId, expire);
 
+                // 获取会员中奖概率
+                Integer randomRate = cardGameRules.getRandomRate();
+                // 将中奖概率存入redis
+                redisUtil.hset(RedisKeys.RANDOMRATE + gameId, userlevel.toString(), randomRate);
+                redisUtil.expire(RedisKeys.RANDOMRATE + gameId, expire);
             }
             // 4.3.抽奖令牌桶 双端队列 key:活动id Collection:从小到大右侧入列
             Collections.sort(tokenList);

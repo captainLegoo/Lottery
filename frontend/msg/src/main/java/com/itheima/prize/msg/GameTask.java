@@ -92,7 +92,7 @@ public class GameTask {
                 tokenList.add(token);
                 // 3.3.3.将 token与奖品的关系 存入redis
                 Integer productId = productIdList.get(i);
-                redisUtil.set(RedisKeys.TOKEN + gameId + "_" + token, productMap.get(productId));
+                redisUtil.set(RedisKeys.TOKEN + gameId + "_" + token, productMap.get(productId), expire);
             }
 
             // 4.活动基本信息/活动策略/抽奖令牌桶/奖品信息等，放⼊Redis

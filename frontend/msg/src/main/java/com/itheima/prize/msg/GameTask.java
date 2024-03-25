@@ -111,11 +111,15 @@ public class GameTask {
                 Integer goalTimes = cardGameRules.getGoalTimes();
                 // 将会员信息存入redis
                 redisUtil.hset(RedisKeys.MAXGOAL + gameId, userlevel.toString(), goalTimes);
+                redisUtil.expire(RedisKeys.MAXGOAL + gameId, expire);
                 redisUtil.hset(RedisKeys.MAXENTER + gameId, userlevel.toString(), enterTimes);
+                redisUtil.expire(RedisKeys.MAXENTER + gameId, expire);
+
             }
             // 4.3.抽奖令牌桶 双端队列 key:活动id Collection:从小到大右侧入列
             Collections.sort(tokenList);
             redisUtil.rightPushAll(RedisKeys.TOKENS + gameId, tokenList);
+            redisUtil.expire(RedisKeys.TOKENS + gameId, expire);
             // 4.4.奖品信息 k-v key:活动id value:奖品信息 (已在3.3.3.完成)
             //redisUtil.set(RedisKeys.TOKEN + gameId + "_" + token, productMap.get(productId), expire);
 

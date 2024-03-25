@@ -80,7 +80,9 @@ public class GameTask {
             long gameStartTimeStamp = cardGame.getStarttime().getTime();
             // 3.2.获取活动结束时间
             long gameEndTimeStamp = cardGame.getEndtime().getTime();
-            // 3.3.计算出每个奖品的令牌桶-时间戳
+            // 3.3.计算活动结束时间到现在还有多少秒，作为redis key过期时间
+            long expire = (gameEndTimeStamp - gameStartTimeStamp) / 1000;
+            // 3.4.计算出每个奖品的令牌桶-时间戳
             long duration = gameEndTimeStamp - gameStartTimeStamp;
             for (int i = 0; i < productIdList.size(); i++) {
                 // 3.3.1.随机时间戳

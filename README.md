@@ -4,6 +4,15 @@ Provide users with a simple and interesting lottery experience. Administrators c
 
 
 
+## Features:
+
+- Cache preheating: Use Redis for cache preheating. When the lottery actually starts, extremely high concurrent access to event-related information is required, and the necessary data must be loaded into redis in advance.
+- Asynchronous processing: RabbitMQ is used as the message queue to implement asynchronous processing. When a prize is won, the lottery user and winning information are handed over to the message queue instead of being directly stored in the database.
+- Prevent oversold: By designing a reasonable token bucket mechanism, oversold problems are effectively prevented and the data integrity and accuracy of the system are guaranteed.
+- Current limiting strategy: Request current limiting is implemented at the Nginx level to prevent malicious requests from causing excessive load on the system.
+
+
+
 ## Admin page
 
 ![在这里插入图片描述](https://img-blog.csdnimg.cn/direct/9372bab8e8b34e42a8accd064d9447ec.png)

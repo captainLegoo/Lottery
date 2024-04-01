@@ -36,7 +36,7 @@ public class ActController {
     private RabbitTemplate rabbitTemplate;
     @Autowired
     private LuaScript luaScript;
-    private Map<String, Object> cacheWarmUPGameInfo;
+    private Map<String, Object> cacheWarmUPGameInfoMap;
     private final static Logger log = LoggerFactory.getLogger(ActController.class);
     // 创建 SimpleDateFormat 对象，指定日期时间格式
     private static SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
@@ -159,7 +159,7 @@ public class ActController {
     public ApiResult info(@PathVariable int gameid){
         log.info("info -> 获取活动相关的缓存信息");
         // 每次对map进行重置
-        cacheWarmUPGameInfo = new LinkedHashMap<>();
+        cacheWarmUPGameInfoMap = new LinkedHashMap<>();
 
         // (暂定不显示:单个活动的具体奖品信息)
         // 1.活动基本信息 k-v key:活动id value:活动对象
@@ -167,13 +167,13 @@ public class ActController {
         if (Objects.isNull(cardGame)) {
             return new ApiResult(200, "缓存信息", null);
         }
-        cacheWarmUPGameInfo.put(RedisKeys.INFO + gameid, cardGame);
+        cacheWarmUPGameInfoMap.put(RedisKeys.INFO + gameid, cardGame);
 
         // 2.活动策略 hset group:活动id key:用户等级 value:策略值
         // 2.1.获取该会员最大中奖次数
-        cacheWarmUPGameInfo.put(RedisKeys.MAXGOAL + gameid, redisUtil.hmget(RedisKeys.MAXGOAL + gameid));
+        cacheWarmUPGameInfoMap.put(RedisKeys.MAXGOAL + gameid, redisUtil.hmget(RedisKeys.MAXGOAL + gameid));
         // 2.2.获取该会员可抽奖次数
-        cacheWarmUPGameInfo.put(RedisKeys.MAXENTER + gameid, redisUtil.hmget(RedisKeys.MAXENTER + gameid));
+        cacheWarmUPGameInfoMap.put(RedisKeys.MAXENTER + gameid, redisUtil.hmget(RedisKeys.MAXENTER + gameid));
 
         // 3.每个令牌桶的奖品信息 k-v key:活动id value:奖品信息
         Map<Object, CardProduct> cardProductMap = new ConcurrentSkipListMap<>();
@@ -184,10 +184,10 @@ public class ActController {
             // 通过redis获取该时间错对应的奖品信息，并存入map
             cardProductMap.put(dateTimeString, cardProduct);
         }
-        cacheWarmUPGameInfo.put(RedisKeys.TOKENS + gameid, cardProductMap);
+        cacheWarmUPGameInfoMap.put(RedisKeys.TOKENS + gameid, cardProductMap);
 
         // 4.返回缓存信息
-        return new ApiResult(200, "缓存信息", cacheWarmUPGameInfo);
+        return new ApiResult(200, "缓存信息", cacheWarmUPGameInfoMap);
     }
 
     private String tokenConvertToOriginDateString(Long token){
